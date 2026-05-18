@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CrowdFund — Trustless Crowdfunding with Soulbound Proof-of-Contribution</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+<style>
+  :root { 
+    --bg:#ffffff; 
+    --panel:#f8f9fa; 
+    --line:#ced4da; 
+    --ink:#212529; 
+    --mut:#495057; 
+  }
+  
+  body { background:var(--bg); color:var(--ink); }
+  
+  /* Force all secondary text to use our darker grey */
+  .text-secondary { color: var(--mut) !important; }
+  
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; }
+  .brand { font-weight:700; letter-spacing:-.4px; }
+  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .pill { border-radius:999px; padding:2px 10px; font-size:.72rem; font-weight:600; }
+  .pill-live { background:#e6f4ea; color:#137333; }
+  .pill-ok   { background:#e8f0fe; color:#1967d2; }
+  .pill-fail { background:#fce8e6; color:#c5221f; }
+  .pill-end  { background:#f1f3f4; color:#5f6368; }
+  .stat { background:#ffffff; border:1px solid var(--line); border-radius:10px; }
+  .progress { background:#e9ecef; height:8px; border-radius:4px; overflow:hidden; }
+  a { color:#0d6efd; text-decoration:none; } a:hover { text-decoration:underline; }
+  .tbl td,.tbl th { border-color:var(--line)!important; vertical-align:middle; font-size:.85rem; color:var(--ink); }
+  .form-control,.form-select { background:#ffffff; border-color:var(--line); color:var(--ink); }
+  .form-control:focus { background:#ffffff; color:var(--ink); border-color:#86b7fe; box-shadow:0 0 0 .25rem rgba(13,110,253,.25); }
+  .sec-title { font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; color:var(--mut); font-weight:600; }
+  .receipt-chip { background:#f3e8ff; color:#6b21a8; border:1px solid #d8b4fe; border-radius:8px; padding:1px 8px; font-size:.78rem; }
+</style>
+</head>
+<body>
+<div class="container py-4" style="max-width:1000px;">
+
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <div>
+      <div class="brand h4 mb-0">⛓ CrowdFund</div>
+      <div class="sec-title">Trustless funding · soulbound proof-of-contribution</div>
+    </div>
+    <div class="text-end">
+      <div id="walletInfo" class="mono small text-secondary mb-1">Not connected</div>
+      <button id="connectBtn" class="btn btn-sm btn-primary">Connect MetaMask</button>
+    </div>
+  </div>
+
+  <div id="netBanner" class="alert alert-warning d-none py-2 small mb-2">
+    Wrong network. Switch MetaMask to <strong id="wantNet">Sepolia</strong> to transact.
+  </div>
+  <div id="status" class="alert d-none py-2 small mono mb-3"></div>
+
+  <div class="panel p-3 mb-4">
+    <div class="sec-title mb-2">Create a campaign</div>
+    <div class="row g-2 align-items-end">
+      <div class="col-sm-4">
+        <label class="small text-secondary">Goal (ETH)</label>
+        <input id="goal" type="number" step="0.001" min="0" class="form-control" placeholder="e.g. 1.5" />
+      </div>
+      <div class="col-sm-4">
+        <label class="small text-secondary">Duration (days, 1–90)</label>
+        <input id="dur" type="number" min="1" max="90" class="form-control" placeholder="e.g. 7" />
+      </div>
+      <div class="col-sm-4">
+        <button id="createBtn" class="btn btn-success w-100">Launch campaign</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="sec-title">Campaign explorer</div>
+    <button id="reloadBtn" class="btn btn-sm btn-outline-secondary">↻ Reload</button>
+  </div>
+  <div id="campaigns" class="row g-3 mb-4">
+    <div class="col-12 text-secondary small">Loading campaigns from the chain…</div>
+  </div>
+
+  <div class="panel p-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="sec-title">My soulbound proof-of-contribution</div>
+      <span class="receipt-chip">non-transferable · cannot be sold</span>
+    </div>
+    <div id="myReceipts" class="small text-secondary">
+      Connect your wallet to see the receipts you have permanently earned.
+    </div>
+  </div>
+
+  <div class="panel p-0 mb-4 overflow-hidden">
+    <div class="d-flex justify-content-between align-items-center px-3 py-2"
+         style="background:var(--panel);border-bottom:1px solid var(--line);">
+      <div class="sec-title mb-0">🔍 On-chain transparency log</div>
+      <button id="logBtn" class="btn btn-sm btn-outline-secondary">↻ Refresh from chain</button>
+    </div>
+    <div class="p-3">
+      <p class="small text-secondary mb-3">
+        Every row is reconstructed directly from blockchain event logs — no server,
+        no local calculation — and links to Etherscan for independent verification.
+        Funds transparency (pledges, claims, refunds) and reputation transparency
+        (soulbound receipts) are shown together.
+      </p>
+      <div class="row g-2 text-center mb-3">
+        <div class="col"><div class="stat p-2"><div class="h5 mb-0" id="cPledge">–</div><div class="sec-title">Pledges</div></div></div>
+        <div class="col"><div class="stat p-2"><div class="h5 mb-0" id="cClaim">–</div><div class="sec-title">Claims</div></div></div>
+        <div class="col"><div class="stat p-2"><div class="h5 mb-0" id="cRefund">–</div><div class="sec-title">Refunds</div></div></div>
+        <div class="col"><div class="stat p-2"><div class="h5 mb-0" id="cReceipt">–</div><div class="sec-title">Receipts</div></div></div>
+      </div>
+      <div id="logStatus" class="small text-secondary mb-2">Reading the chain…</div>
+      <div class="table-responsive">
+        <table class="table table-sm tbl mb-0">
+          <thead><tr>
+            <th>Event</th><th>Camp.</th><th>Address</th><th>Amount (ETH)</th>
+            <th>Soulbound receipt</th><th>Verify</th>
+          </tr></thead>
+          <tbody id="logBody">
+            <tr><td colspan="6" class="text-center text-secondary">No events loaded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center small text-secondary pb-3">
+    CCS6354 · Ethereum Sepolia · contract source verified on Etherscan
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
