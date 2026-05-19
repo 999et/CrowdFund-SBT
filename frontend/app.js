@@ -6,7 +6,7 @@
 
 import {
   NETWORKS, ACTIVE, CROWDFUND_ADDRESS, RECEIPT_ADDRESS,
-  CROWDFUND_ABI, RECEIPT_ABI, ERROR_MAP,
+  CROWDFUND_ABI, RECEIPT_ABI, ERROR_MAP, DEPLOYMENT_BLOCK
 } from "./src/config/contract.js";
 
 const NET = NETWORKS[ACTIVE];
@@ -176,7 +176,8 @@ async function loadMyReceipts() {
   try {
     const activeProvider = provider || roProvider;
     const latestBlock = await activeProvider.getBlockNumber();
-    const startBlock = Math.max(0, latestBlock - 5000); 
+    // Replace the Math.max(0, latestBlock - 5000) logic with your config variable:
+    const startBlock = DEPLOYMENT_BLOCK; 
 
     const evs = await rcRead.queryFilter(rcRead.filters.ReceiptMinted(null, null, account), startBlock, "latest");
     if (evs.length === 0) { box.innerHTML = "You have no soulbound receipts yet. Pledge to a campaign to earn one."; return; }
@@ -200,7 +201,8 @@ async function loadLog() {
     $("logStatus").textContent = "Reading events directly from the blockchain…";
     const activeProvider = provider || roProvider;
     const latestBlock = await activeProvider.getBlockNumber();
-    const startBlock = Math.max(0, latestBlock - 5000); 
+    // Replace the Math.max(0, latestBlock - 5000) logic with your config variable:
+    const startBlock = DEPLOYMENT_BLOCK;
 
     const [created, pledged, claimed, refunded] = await Promise.all([
       cfRead.queryFilter(cfRead.filters.CampaignCreated(), startBlock, "latest"),

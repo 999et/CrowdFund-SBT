@@ -23,6 +23,7 @@ export const ACTIVE = "sepolia";
 
 export const CROWDFUND_ADDRESS = "0x3bD3986248b00328805349428b8919B202A1665B";
 export const RECEIPT_ADDRESS = "0x6DeeEde823E059b3f5FBc4945903795D46520303";
+export const DEPLOYMENT_BLOCK = 10872177;
 
 export const CROWDFUND_ABI = [
   "function campaignCount() view returns (uint256)",
